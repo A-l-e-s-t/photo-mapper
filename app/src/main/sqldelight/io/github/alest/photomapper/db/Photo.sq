@@ -1,0 +1,20 @@
+import kotlin.Boolean;
+
+
+CREATE TABLE photo (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  uri TEXT NOT NULL,
+  dateTaken TEXT NOT NULL,
+  latitude REAL NOT NULL,
+  longitude REAL NOT NULL
+);
+
+selectAll:
+SELECT * FROM photo ORDER BY id DESC;
+
+insert:
+INSERT INTO photo(uri, dateTaken, latitude, longitude)
+VALUES (?, ?, ?, ?);
+
+deleteById:
+DELETE FROM photo WHERE id = ?;
