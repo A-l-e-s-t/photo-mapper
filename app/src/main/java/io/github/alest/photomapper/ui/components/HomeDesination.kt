@@ -20,6 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import io.github.alest.photomapper.db.DatabaseProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 //import com.example.shadow.db.DatabaseProvider
 //import com.example.shadow.db.Model
@@ -36,31 +39,58 @@ import io.github.alest.photomapper.db.DatabaseProvider
 //)
 
 
-fun scanAllPhotos(context: Context) {
-    val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
-    } else {
-        MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-    }
+suspend fun scanAllPhotos(context: Context) {
+    withContext(Dispatchers.IO) {
+        val db = DatabaseProvider.database
 
-    // Define which "Columns" you want from the system database
-    val projection = arrayOf(MediaStore.Images.Media._ID)
+        val processedUris = db.photoQueries.selectAll()
+            .executeAsList()
+            .map { it.uri }
+            .toHashSet() // HashSet provides O(1) lookup speed
 
-    context.contentResolver.query(collection, projection, null, null, null)?.use { cursor ->
-        val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+        val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        } else {
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        }
 
-        while (cursor.moveToNext()) {
-            val id = cursor.getLong(idColumn)
-            val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
-//            println("uri: $uri")
+        context.contentResolver.query(
+            collection,
+            arrayOf(MediaStore.Images.Media._ID),
+            "${MediaStore.Images.Media.MIME_TYPE} = ?",
+            arrayOf("image/jpeg"),
+            null
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
 
-            // NOW: Run your EXIF logic for this specific URI
-            val metadata = extractPhotoMetadata(context, uri)
-            if (metadata != null) {
-                println("latitude: ${metadata.latitude}, longitude: ${metadata.longitude}, date: ${metadata.dateTaken}")
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idColumn)
+                val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id)
+    //            println("uri: $uri")
+
+                if (processedUris.contains(uri.toString())) {
+                    continue
+                }
+
+                // NOW: Run your EXIF logic for this specific URI
+                val metadata = extractPhotoMetadata(context, uri)
+                if (metadata != null) {
+                    println("latitude: ${metadata.latitude}, longitude: ${metadata.longitude}, date: ${metadata.dateTaken}")
+
+                    val photo = db.photoQueries.selectByUri(metadata.uri.toString()).executeAsOneOrNull()
+
+                    if (photo == null) {
+                        db.photoQueries.insert(
+                            metadata.uri.toString(),
+                            metadata.dateTaken,
+                            metadata.latitude,
+                            metadata.longitude,
+                        )
+                    }
+                }
             }
         }
-    }
+}
 }
 
 
@@ -300,7 +330,9 @@ fun HomeDestination(modifier: Modifier = Modifier) {
             Row {
                 Button(
                     onClick = {
-                        scanAllPhotos(context)
+                        scope.launch {
+                            scanAllPhotos(context)
+                        }
                     },
                     contentPadding = PaddingValues(16.dp * 2),
                 ) {
