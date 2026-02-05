@@ -24,6 +24,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+import io.github.alest.photomapper.util.*
+
 //import com.example.shadow.db.DatabaseProvider
 //import com.example.shadow.db.Model
 //import com.example.shadow.db.LlmEndpoint
@@ -91,31 +93,6 @@ suspend fun scanAllPhotos(context: Context) {
             }
         }
 }
-}
-
-
-
-@Composable
-fun rememberPhotoPermissionLauncher(
-    onPermissionsGranted: () -> Unit,
-    onPermissionsDenied: () -> Unit
-): ManagedActivityResultLauncher<Array<String>, Map<String, Boolean>> {
-    return rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val locationGranted = permissions[Manifest.permission.ACCESS_MEDIA_LOCATION] ?: false
-        val storageGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions[Manifest.permission.READ_MEDIA_IMAGES] ?: false
-        } else {
-            permissions[Manifest.permission.READ_EXTERNAL_STORAGE] ?: false
-        }
-
-        if (locationGranted) {
-            println("Success! Now launching gallery...")
-        } else {
-            println("Still denied. Check Manifest or System Settings.")
-        }
-    }
 }
 
 
