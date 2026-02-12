@@ -38,7 +38,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AppTheme {
-                PhotoOptimizerApp()
+                PhotoMapperApp()
             }
         }
     }
@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun PhotoOptimizerApp() {
+fun PhotoMapperApp() {
     val context = LocalContext.current
     val activity = context as? Activity
 
