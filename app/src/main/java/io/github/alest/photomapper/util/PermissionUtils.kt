@@ -2,8 +2,11 @@ package io.github.alest.photomapper.util
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
+import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,32 +39,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityCompat.requestPermissions
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import io.github.alest.photomapper.db.DatabaseProvider
 import kotlinx.coroutines.*
 import java.io.File
-
-
-@Composable
-fun rememberPhotoPermissionLauncher(
-    onPermissionsGranted: () -> Unit,
-    onPermissionsDenied: () -> Unit
-): ManagedActivityResultLauncher<Array<String>, Map<String, Boolean>> {
-    return rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val locationGranted = permissions[Manifest.permission.ACCESS_MEDIA_LOCATION] ?: false
-        val storageGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions[Manifest.permission.READ_MEDIA_IMAGES] ?: false
-        } else {
-            permissions[Manifest.permission.READ_EXTERNAL_STORAGE] ?: false
-        }
-
-        if (locationGranted) {
-            println("Success! Now launching gallery...")
-        } else {
-            println("Still denied. Check Manifest or System Settings.")
-        }
-    }
-}

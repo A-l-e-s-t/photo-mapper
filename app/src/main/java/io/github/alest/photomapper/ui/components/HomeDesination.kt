@@ -5,10 +5,12 @@ package io.github.alest.photomapper.ui.components
 import android.Manifest
 import android.content.ContentUris
 import android.content.Context
+import android.content.pm.PackageManager
 import android.media.ExifInterface
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import io.github.alest.photomapper.db.DatabaseProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -200,24 +203,40 @@ fun HomeDestination(modifier: Modifier = Modifier) {
 //    var dateTaken by remember { mutableStateOf("Unknown") }
 //    var location by remember { mutableStateOf<Location?>(null) }
 
-    val permissionLauncher = rememberPhotoPermissionLauncher(
-        onPermissionsGranted = { println("Success! Launching gallery...") },
-        onPermissionsDenied = { println("Permission denied.") }
-    )
+//    val photoPermissionLauncher = rememberPhotoPermissionLauncher(
+//        onPermissionsGranted = { println("Success! Launching gallery...") },
+//        onPermissionsDenied = { println("Permission denied.") }
+//    )
 
-    val launcher = rememberPhotoPickerLauncher(
-        onPhotoPicked = { metadata ->
-            if (metadata != null) {
-                println("latitude: ${metadata.latitude}, longitude: ${metadata.longitude}, date: ${metadata.dateTaken}")
-                db.photoQueries.insert(
-                    uri = metadata.uri.toString(),
-                    dateTaken = metadata.dateTaken,
-                    latitude = metadata.latitude,
-                    longitude = metadata.longitude
-                )
-            }
-        }
-    )
+//    val (storageGranted, storageLauncher) = rememberStoragePermission()
+//    val (locationGranted, locationLauncher) = rememberLocationPermission()
+//
+//    val launcher = rememberLauncherForActivityResult(
+//        ActivityResultContracts.RequestPermission()
+//    ) { isGranted: Boolean ->
+//        if (isGranted) {
+//            // Permission Accepted: Do something
+//            Log.d("ExampleScreen","PERMISSION GRANTED")
+//
+//        } else {
+//            // Permission Denied: Do something
+//            Log.d("ExampleScreen","PERMISSION DENIED")
+//        }
+//    }
+//
+//    val photoPickerLauncher = rememberPhotoPickerLauncher(
+//        onPhotoPicked = { metadata ->
+//            if (metadata != null) {
+//                println("latitude: ${metadata.latitude}, longitude: ${metadata.longitude}, date: ${metadata.dateTaken}")
+//                db.photoQueries.insert(
+//                    uri = metadata.uri.toString(),
+//                    dateTaken = metadata.dateTaken,
+//                    latitude = metadata.latitude,
+//                    longitude = metadata.longitude
+//                )
+//            }
+//        }
+//    )
 
 //    val storedString = queries.selectAll().executeAsOne().uri
 //    val photoUri = Uri.parse(storedString) // Turns text back into a usable address
@@ -248,6 +267,14 @@ fun HomeDestination(modifier: Modifier = Modifier) {
 //            }
 //        }
 //    }
+
+    val permission = Manifest.permission.READ_MEDIA_IMAGES
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) Log.d("Permissions", "Granted!")
+        else Log.d("Permissions", "Denied!")
+    }
 
 
     // Scaffold provides the structure for the TopBar and handles system insets
@@ -320,25 +347,20 @@ fun HomeDestination(modifier: Modifier = Modifier) {
 
                 Button(
                     onClick = {
-                        //
-                        val permissionsNeeded = mutableListOf(Manifest.permission.ACCESS_MEDIA_LOCATION)
+                        val status = ContextCompat.checkSelfPermission(context, permission)
 
-                        // Add the appropriate storage permission based on Android Version
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            permissionsNeeded.add(Manifest.permission.READ_MEDIA_IMAGES)
+                        if (status != PackageManager.PERMISSION_GRANTED) {
+                            permissionLauncher.launch(permission)
                         } else {
-                            permissionsNeeded.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+                            Log.d("Permissions", "We already have it. Doing work...")
                         }
-                        permissionLauncher.launch(permissionsNeeded.toTypedArray())
-
-                        launcher.launch("image/*")
 
 //                launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
 //                launcher.launch("image/*")
                     },
                     contentPadding = PaddingValues(16.dp * 2),
                 ) {
-                    Text("Pick a photo")
+                    Text("Permission")
                 }
             }
 
