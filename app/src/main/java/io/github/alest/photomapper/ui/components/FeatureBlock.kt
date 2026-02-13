@@ -72,3 +72,54 @@ fun PermissionFeatureBlock(
         }
     }
 }
+
+
+
+@Composable
+fun DeniedPermissionFeatureBlock(
+    title: String,
+    content: String,
+    onOpenSettings: () -> Unit,
+    onPermissionCheck: () -> Unit
+) {
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        // Optional: You can put a TopBar here that stays visible for both screens
+    ) { innerPadding ->
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+//            color = MaterialTheme.colorScheme.background
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(64.dp))
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = content,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(24.dp))
+
+                Row {
+                    Button(onClick = onOpenSettings) {
+                        Text("Open app settings")
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Button(onClick = onPermissionCheck) {
+                        Text("Check permission")
+                    }
+                }
+            }
+        }
+    }
+}

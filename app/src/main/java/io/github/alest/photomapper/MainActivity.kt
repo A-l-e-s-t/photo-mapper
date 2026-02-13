@@ -2,8 +2,11 @@ package io.github.alest.photomapper
 
 import android.Manifest
 import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -28,6 +31,7 @@ import org.maplibre.android.WellKnownTileServer
 
 import io.github.alest.photomapper.ui.components.*
 import io.github.alest.photomapper.ui.theme.AppTheme
+import io.github.alest.photomapper.util.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,16 +57,19 @@ fun PhotoMapperApp() {
     val storagePermission = Manifest.permission.READ_MEDIA_IMAGES
     val locationPermission = Manifest.permission.ACCESS_FINE_LOCATION
 
+    var isStorageDenied by remember { mutableStateOf(false) }
+    var isLocationDenied by remember { mutableStateOf(false) }
+
     // 1. Create a state to track if we should show the app or the "permission wall"
     // We initialize it by checking the current status
     var hasStoragePermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(context, storagePermission) == PackageManager.PERMISSION_GRANTED
+            checkPermission(context, storagePermission)
         )
     }
     var hasLocationPermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(context, locationPermission) == PackageManager.PERMISSION_GRANTED
+            checkPermission(context, locationPermission)
         )
     }
 
@@ -70,34 +77,66 @@ fun PhotoMapperApp() {
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         hasStoragePermission = isGranted // Update UI state based on user choice
+
+        if (!hasStoragePermission) {
+            isStorageDenied = true
+        }
     }
     val locationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         hasLocationPermission = isGranted // Update UI state based on user choice
+
+        if (!hasLocationPermission) {
+            isLocationDenied = true
+        }
     }
 
-    val showStorageRationale = activity?.let {
-        ActivityCompat.shouldShowRequestPermissionRationale(it, storagePermission)
-    } ?: false
+//    val showStorageRationale = activity?.let {
+//        ActivityCompat.shouldShowRequestPermissionRationale(it, storagePermission)
+//    } ?: false
+//
+//    val showLocationRationale = activity?.let {
+//        ActivityCompat.shouldShowRequestPermissionRationale(it, locationPermission)
+//    } ?: false
 
     when {
+        hasStoragePermission && hasLocationPermission -> MainAppContent()
+
         !hasStoragePermission -> {
-            PermissionFeatureBlock(
-                title = "Storage Access Required",
-                content = "Photo Mapper needs to access your photos to display them on the map. Without this, the app cannot function.",
-                onGrantClick = { storageLauncher.launch(storagePermission) }
-            )
+            if (isStorageDenied) {
+                DeniedPermissionFeatureBlock(
+                    title = "Photos Access Required",
+                    content = "Photo Mapper needs access to all your photos to display them on the map. " +
+                            "Go to settings to grant access to all photos. Without this, the app cannot function.",
+                    onOpenSettings = { openAppSettings(context) },
+                    onPermissionCheck = { hasStoragePermission = checkPermission(context, storagePermission) }
+                )
+            } else {
+                PermissionFeatureBlock(
+                    title = "Photos Access Required",
+                    content = "Photo Mapper needs access to all your photos to display them on the map. Without this, the app cannot function.",
+                    onGrantClick = { storageLauncher.launch(storagePermission) }
+                )
+            }
         }
+
         !hasLocationPermission -> {
-            PermissionFeatureBlock(
-                title = "Precise location Access Required",
-                content = "Photo Mapper needs precise location access to display photos them on the map. Without this, the app cannot function.",
-                onGrantClick = { locationLauncher.launch(locationPermission) }
-            )
-        }
-        else -> {
-            MainAppContent()
+            if (isLocationDenied) {
+                DeniedPermissionFeatureBlock(
+                    title = "Precise location Access Required",
+                    content = "Photo Mapper needs precise location access to display photos on the map. " +
+                            "Go to settings to grant precise location access. Without this, the app cannot function.",
+                    onOpenSettings = { openAppSettings(context) },
+                    onPermissionCheck = { hasLocationPermission = checkPermission(context, locationPermission) }
+                )
+            } else {
+                PermissionFeatureBlock(
+                    title = "Precise location Access Required",
+                    content = "Photo Mapper needs precise location access to display photos on the map. Without this, the app cannot function.",
+                    onGrantClick = { locationLauncher.launch(locationPermission) }
+                )
+            }
         }
     }
 }

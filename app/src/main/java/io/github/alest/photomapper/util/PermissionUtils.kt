@@ -50,3 +50,15 @@ import androidx.lifecycle.ViewModelProvider
 import io.github.alest.photomapper.db.DatabaseProvider
 import kotlinx.coroutines.*
 import java.io.File
+
+fun openAppSettings(context: Context) {
+    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+        // This specific URI takes them directly to YOUR app's settings page
+        data = Uri.fromParts("package", context.packageName, null)
+    }
+    context.startActivity(intent)
+}
+
+fun checkPermission(context: Context, permission: String): Boolean {
+    return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+}
