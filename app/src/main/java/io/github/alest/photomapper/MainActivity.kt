@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -54,7 +55,11 @@ fun PhotoMapperApp() {
     val context = LocalContext.current
     val activity = context as? Activity
 
-    val storagePermission = Manifest.permission.READ_MEDIA_IMAGES
+    val storagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        Manifest.permission.READ_MEDIA_IMAGES
+    } else {
+        Manifest.permission.READ_EXTERNAL_STORAGE
+    }
     val locationPermission = Manifest.permission.ACCESS_FINE_LOCATION
 
     var isStorageDenied by remember { mutableStateOf(false) }
