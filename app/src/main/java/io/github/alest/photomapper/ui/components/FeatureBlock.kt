@@ -34,8 +34,6 @@ import io.github.alest.photomapper.util.*
 
 @Composable
 fun PermissionFeatureBlock(
-    title: String,
-    content: String,
     onGrantClick: () -> Unit
 ) {
     Scaffold(
@@ -56,12 +54,13 @@ fun PermissionFeatureBlock(
                 Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(64.dp))
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    text = title,
+                    text = "Photos Access Required",
                     style = MaterialTheme.typography.headlineMedium,
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = content,
+                    text = "Photo Mapper needs access to all your photos to display them on the map. " +
+                            "Without this, the app cannot function.",
                     textAlign = TextAlign.Center
                 )
                 Spacer(Modifier.height(24.dp))
@@ -77,8 +76,6 @@ fun PermissionFeatureBlock(
 
 @Composable
 fun DeniedPermissionFeatureBlock(
-    title: String,
-    content: String,
     onOpenSettings: () -> Unit,
     onPermissionCheck: () -> Unit
 ) {
@@ -100,12 +97,13 @@ fun DeniedPermissionFeatureBlock(
                 Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(64.dp))
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    text = title,
+                    text = "Photos Access Required",
                     style = MaterialTheme.typography.headlineMedium,
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = content,
+                    text = "Photo Mapper needs access to all your photos to display them on the map. " +
+                            "Go to settings to grant access to all photos. Without this, the app cannot function.",
                     textAlign = TextAlign.Center
                 )
                 Spacer(Modifier.height(24.dp))
