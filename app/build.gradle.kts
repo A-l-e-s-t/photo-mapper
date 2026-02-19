@@ -74,7 +74,7 @@ dependencies {
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("io.coil-kt:coil-compose:2.6.0")
-    implementation("org.maplibre.gl:android-sdk:11.5.0")
+    implementation(libs.maplibre.compose)
 
 
     // SQLDelight
