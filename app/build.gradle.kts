@@ -3,9 +3,9 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 
-    id("com.google.devtools.ksp") version "2.2.10-2.0.2"
+    id("com.google.devtools.ksp")
 //    alias(libs.plugins.sqldelight)
-    id("app.cash.sqldelight") version "2.1.0"
+    id("app.cash.sqldelight")
 }
 
 android {
