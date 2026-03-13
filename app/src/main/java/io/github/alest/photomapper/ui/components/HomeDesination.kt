@@ -82,14 +82,14 @@ suspend fun scanAllPhotos(context: Context) {
                 if (metadata != null) {
                     println("latitude: ${metadata.latitude}, longitude: ${metadata.longitude}, date: ${metadata.dateTaken}")
 
+                    // add only new photos
                     val photo = db.photoQueries.selectByUri(metadata.uri.toString()).executeAsOneOrNull()
-
                     if (photo == null) {
                         db.photoQueries.insert(
                             metadata.uri.toString(),
                             metadata.dateTaken,
-                            metadata.latitude,
                             metadata.longitude,
+                            metadata.latitude,
                         )
                     }
                 }
