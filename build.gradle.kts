@@ -4,5 +4,6 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.google.devtools.ksp) apply false
+    alias(libs.plugins.jetbrains.compose) apply false
     id("app.cash.sqldelight") version "2.1.0" apply false
 }

@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.jetbrains.compose)
 
     id("com.google.devtools.ksp")
 //    alias(libs.plugins.sqldelight)
@@ -71,11 +72,14 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    implementation(libs.androidx.compose.material.icons.core)
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation(libs.maplibre.compose)
-
+//    implementation(libs.maplibre.composeMaterial3)
+//    // This provides Point, Feature, etc. (available on Maven Central)
+//    implementation("org.maplibre.gl:geojson:7.0.0-pre0")
 
     // SQLDelight
 //    implementation(libs.sqldelight.runtime)
