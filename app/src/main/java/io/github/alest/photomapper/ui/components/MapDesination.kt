@@ -59,7 +59,17 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
+import io.github.alest.photomapper.db.DatabaseProvider
+import io.github.alest.photomapper.db.Photo
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -93,6 +103,11 @@ import org.maplibre.spatialk.geojson.Position
 import org.maplibre.spatialk.geojson.dsl.featureCollectionOf
 import org.maplibre.spatialk.geojson.toJson
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import org.maplibre.spatialk.geojson.dsl.buildFeature
+import org.maplibre.spatialk.geojson.dsl.buildFeatureCollection
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 //import com.example.shadow.db.DatabaseProvider
 //import com.example.shadow.db.Model
@@ -122,14 +137,18 @@ fun MapDestination(modifier: Modifier = Modifier) {
                 .fillMaxSize()
 //                .padding(innerPadding)
         ) {
-            OpenSourceMap(50.76822, 25.383766, innerPadding = innerPadding)
+            OpenSourceMap(innerPadding = innerPadding)
         }
     }
 }
 
 
 @Composable
-fun OpenSourceMap(latitude: Double, longitude: Double, innerPadding: PaddingValues, modifier: Modifier = Modifier) {
+fun OpenSourceMap(
+    innerPadding: PaddingValues,
+    modifier: Modifier = Modifier
+) {
+    val db = DatabaseProvider.database
     val isDark = isSystemInDarkTheme()
 
     // 2. Select the appropriate URL
@@ -149,6 +168,9 @@ fun OpenSourceMap(latitude: Double, longitude: Double, innerPadding: PaddingValu
 
     val cameraState = rememberCameraState()
     val styleState = rememberStyleState()
+
+    // TODO: use ViewModel
+    val photos = db.photoQueries.selectAll().executeAsList()
 
     Box(Modifier.fillMaxSize()) {
         val view = LocalView.current
@@ -175,27 +197,25 @@ fun OpenSourceMap(latitude: Double, longitude: Double, innerPadding: PaddingValu
                 )
             ),
         ) {
-//            val amtrakStations = rememberGeoJsonSource(
-//                data = GeoJsonData.Uri(
-//                    "https://raw.githubusercontent.com/datanews/amtrak-geojson/refs/heads/master/amtrak-stations.geojson"
-//                )
-//            )
-
-//            println("amtrakStations: $amtrakStations")
-
-
             val source = rememberGeoJsonSource(
                 data = GeoJsonData.Features(
-                    FeatureCollection<Point, JsonObject>( // Use non-nullable JsonObject
-                        Feature<Point, JsonObject>(
-                            geometry = Point(Position(121.5170, 25.0478)),
-                            // Provide an explicitly empty JsonObject instead of null
-                            properties = JsonObject(emptyMap())
-                        )
-                    )
-                ),
+                    buildFeatureCollection {
+                        // TODO: prevent crash when no photos are scanned yet
+                        photos.forEach { photo ->
+                            add(
+                                buildFeature {
+                                    geometry = Point(Position(photo.longitude, photo.latitude))
+                                    properties = buildJsonObject {
+                                        put("id", photo.id)
+                                        put("uri", photo.uri)
+                                    }
+                                }
+                            )
+                        }
+
+                    }
+                )
             )
-            
 //            SymbolLayer(
 //                id = "amtrak-stations",
 //                source = amtrakStations,
