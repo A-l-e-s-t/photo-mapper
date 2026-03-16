@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
     implementation(libs.androidx.ui)
+    implementation(libs.androidx.compose.ui.unit)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -77,7 +78,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation(libs.maplibre.compose)
-//    implementation(libs.maplibre.composeMaterial3)
+    implementation(libs.maplibre.compose.material3)
 //    // This provides Point, Feature, etc. (available on Maven Central)
 //    implementation("org.maplibre.gl:geojson:7.0.0-pre0")
 
