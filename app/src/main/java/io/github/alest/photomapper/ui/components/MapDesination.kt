@@ -47,6 +47,7 @@ import org.maplibre.compose.sources.rememberGeoJsonSource
 import org.maplibre.spatialk.geojson.GeoJsonObject
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,6 +58,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -89,6 +91,7 @@ import org.maplibre.compose.expressions.dsl.not
 import org.maplibre.compose.expressions.dsl.offset
 import org.maplibre.compose.expressions.dsl.plus
 import org.maplibre.compose.expressions.dsl.step
+import org.maplibre.compose.expressions.dsl.get
 import org.maplibre.compose.layers.CircleLayer
 import org.maplibre.compose.layers.SymbolLayer
 import org.maplibre.compose.sources.GeoJsonData
@@ -108,6 +111,12 @@ import org.maplibre.spatialk.geojson.dsl.buildFeature
 import org.maplibre.spatialk.geojson.dsl.buildFeatureCollection
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.maplibre.compose.expressions.dsl.switch
+import org.maplibre.compose.expressions.dsl.case
+import org.maplibre.compose.expressions.dsl.get
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
+import org.maplibre.compose.expressions.value.StringValue
 
 //import com.example.shadow.db.DatabaseProvider
 //import com.example.shadow.db.Model
@@ -169,8 +178,29 @@ fun OpenSourceMap(
     val cameraState = rememberCameraState()
     val styleState = rememberStyleState()
 
+    val defaultPainter = rememberVectorPainter(Icons.Default.LocationOn)
+
     // TODO: use ViewModel
     val photos = db.photoQueries.selectAll().executeAsList()
+
+    val imageCases = photos.map { photo ->
+        val painter = key(photo.id) {
+            rememberAsyncImagePainter(
+                model = ImageRequest.Builder(context)
+                    .data(photo.uri)
+                    .size(150)
+                    .allowHardware(false)
+                    .build()
+            )
+        }
+
+        case(
+            // FIX: Convert the numeric ID to a String so it matches the switch input
+            label = photo.id.toString(),
+            output = image(painter)
+        )
+    }.toTypedArray() // Note: Keep the .toTypedArray()! The switch expression needs an Array.
+
 
     Box(Modifier.fillMaxSize()) {
         val view = LocalView.current
@@ -206,7 +236,7 @@ fun OpenSourceMap(
                                 buildFeature {
                                     geometry = Point(Position(photo.longitude, photo.latitude))
                                     properties = buildJsonObject {
-                                        put("id", photo.id)
+                                        put("id", photo.id.toString())
                                         put("uri", photo.uri)
                                     }
                                 }
@@ -216,106 +246,33 @@ fun OpenSourceMap(
                     }
                 )
             )
-//            SymbolLayer(
-//                id = "amtrak-stations",
-//                source = amtrakStations,
-//                iconImage = painterResource(Res.drawable.ic_default_marker)
-//            )
 
-            CircleLayer(
-                id = "amtrak-stations-test",
+            // TODO: improve performance
+            SymbolLayer(
+                id = "user-photos",
                 source = source,
-                color = const(Color.Red)
+                iconImage = if (imageCases.isNotEmpty()) {
+                    switch(
+                        input = feature["id"].asString(),
+                        cases = imageCases,
+                        fallback = image(defaultPainter)
+                    )
+                } else {
+                    image(defaultPainter)
+                },
+                iconOffset = const(DpOffset(x = 0.dp, y = (-10).dp)),
+                // 2. FIX: Force the map to draw the icons even if they are overlapping
+                iconAllowOverlap = const(true),
+                // Optional but recommended: Also ignore collisions with basemap text (like city names)
+                iconIgnorePlacement = const(true)
             )
-        }
 
-//        Box(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(8.dp)) {
-////            ScaleBar(cameraState.metersPerDpAtTarget, modifier = Modifier.align(Alignment.TopStart))
-//            CompassButton(cameraState, modifier = Modifier.align(Alignment.TopEnd))
-//            ExpandingAttributionButton(
-//                cameraState = cameraState,
-//                styleState = styleState,
-//                modifier = Modifier.align(Alignment.BottomEnd),
-//                contentAlignment = Alignment.BottomEnd,
+            // For debugging
+//            CircleLayer(
+//                id = "user-photos-circles",
+//                source = source,
+//                color = const(Color.Red)
 //            )
-//        }
+        }
     }
-
-
-    // 1. We create a "Hidden" view that Compose will render into a Bitmap
-//    val markerView = ComposeView(context).apply {
-//        setContent {
-//            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-//                // THE HOVERING IMAGE (The "Bubble")
-//                Surface(
-//                    shape = RoundedCornerShape(12.dp),
-//                    shadowElevation = 8.dp,
-//                    border = BorderStroke(2.dp, Color.White),
-//                    modifier = Modifier.size(80.dp) // Size of the floating preview
-//                ) {
-//                    AsyncImage(
-//                        model = photoUri,
-//                        contentDescription = null,
-//                        contentScale = ContentScale.Crop
-//                    )
-//                }
-//
-//                // THE STEM/POINTER (The "Triangle")
-//                Box(
-//                    modifier = Modifier
-//                        .size(15.dp)
-//                        .graphicsLayer { rotationZ = 45f }
-//                        .offset(y = (-8).dp)
-//                        .background(Color.White)
-//                )
-//
-//                Spacer(modifier = Modifier.height(4.dp))
-//
-//                // THE CUSTOM PIN (The "Base")
-//                Icon(
-//                    imageVector = Icons.Default.LocationOn,
-//                    contentDescription = null,
-//                    tint = Color.Red,
-//                    modifier = Modifier.size(40.dp)
-//                )
-//            }
-//        }
-//    }
-
-
-    // IMPORTANT: Maps need to be told to start/stop with the app
-//    DisposableEffect(mapView) {
-//        mapView.onStart()
-//        mapView.onResume()
-//        onDispose {
-//            mapView.onPause()
-//            mapView.onStop()
-//            mapView.onDestroy()
-//        }
-//    }
-//
-//    // This block handles the "Lifecycle" (OnResume, OnPause, etc.)
-//    AndroidView(
-//        modifier = modifier.fillMaxSize(),
-//        factory = {
-//            mapView.apply {
-//                getMapAsync { map ->
-//                    map.setStyle(styleUrl)
-//                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(point, 12.0))
-//
-//                    map.addMarker(
-//                        org.maplibre.android.annotations.MarkerOptions()
-//                            .position(LatLng(50.76122, 25.383866))
-//                            .title("Photo Location")
-//                            .snippet("Lutsk, Ukraine")
-//                    )
-//                }
-//            }
-//        },
-////        update = { view ->
-////            view.getMapAsync { map ->
-////                map.animateCamera(CameraUpdateFactory.newLatLngZoom(point, 12.0))
-////            }
-////        }
-//    )
 }
